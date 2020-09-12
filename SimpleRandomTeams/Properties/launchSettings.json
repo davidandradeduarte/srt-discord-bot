@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "SimpleRandomTeams": {
+      "commandName": "Project"
+    },
+    "Docker": {
+      "commandName": "Docker"
+    }
+  }
+}
