@@ -49,13 +49,6 @@ namespace SimpleRandomTeams
                         .OrderBy(a => Guid.NewGuid())
                         .Distinct()
                         .ToList();
-                    
-                    // temp test with ducks role
-                    /*var connectedMembers = discord.Guilds.FirstOrDefault().Value.Members
-                        .Where(member => member.Roles.FirstOrDefault(x => x.Name == "Ducks") != null)
-                        .OrderBy(a => Guid.NewGuid())
-                        .Distinct()
-                        .ToList();*/
 
                     team1 = connectedMembers.Take(connectedMembers.Count / 2).ToList();
                     team2 = connectedMembers.Skip(connectedMembers.Count / 2).ToList();
