@@ -154,6 +154,34 @@ namespace SimpleRandomTeams
 
                     originChannel = default;
                 }
+                if (message.Message.Content.Equals("!map"))
+                {
+                    Log.Information("Choosing a map...");
+                    
+
+                    var embed = new DiscordEmbedBuilder
+                    {
+                        Title = "Simple Team Generator",
+                        Timestamp = DateTimeOffset.Now,
+                        Color = new DiscordColor(0xFF6133)
+                    };
+
+                    string[] maps = {"Inferno","Train","Mirage","Nuke","Overpass","DustII","Vertigo","Cache"};
+
+                    Random rnd = new Random();
+
+                    string map = maps[rnd.Next(0,maps.Length)];    
+                    
+                    embed.AddField($"Map {DiscordEmoji.FromName(discord, ":arrow_down:")}\n" + map);
+
+                    embed.Footer = new DiscordEmbedBuilder.EmbedFooter
+                    {
+                        Text = $""+map+", what a good choice! {DiscordEmoji.FromName(discord, ":muscle:")}"
+                    };
+
+                    embed.Fields.ToList().ForEach(x => Log.Information($"\n{x.Name}\n{x.Value}"));
+                    await message.Channel.SendMessageAsync(embed: embed);
+                }
             };
 
             await discord.ConnectAsync();
