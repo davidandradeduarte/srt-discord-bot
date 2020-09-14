@@ -1,196 +1,119 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using DSharpPlus;
-using DSharpPlus.Entities;
+using DSharpPlus.CommandsNext;
+using DSharpPlus.Interactivity;
+using Microsoft.Extensions.Configuration;
 using Serilog;
+using System.IO;
+using SimpleRandomTeams.Commands;
 
 namespace SimpleRandomTeams
 {
-    class Program
+    internal class Program
     {
-        private static void Main(string[] args)
+        private CancellationTokenSource Cts { get; set; }
+        private IConfigurationRoot _config;
+        private DiscordClient _discord;
+        private CommandsNextModule _commands;
+        private InteractivityModule _interactivity;
+
+        private static async Task Main(string[] args) => await new Program().InitBot(args);
+
+        private async Task InitBot(string[] args)
         {
-            Log.Logger = new LoggerConfiguration()
-                .WriteTo.File("simplerandomteams.log")
-                .WriteTo.Console()
-                .CreateLogger();
+            try
+            {
+                Log.Logger = new LoggerConfiguration()
+                    .WriteTo.File("app.log")
+                    .WriteTo.Console()
+                    .CreateLogger();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Error when creating the logger.");
+                Console.WriteLine(e.Message, e);
+                throw;
+            }
             
-            MainAsync(args).ConfigureAwait(false).GetAwaiter().GetResult();
+            try
+            {
+                Cts = new CancellationTokenSource();
+
+                Log.Information("Loading configuration file.");
+                _config = new ConfigurationBuilder()
+                    .SetBasePath(Directory.GetCurrentDirectory())
+                    .AddJsonFile("config.json", optional: false, reloadOnChange: true)
+                    .Build();
+
+                Log.Information("Creating discord client.");
+                _discord = new DiscordClient(new DiscordConfiguration
+                {
+                    Token = _config["discord:token"],
+                    TokenType = TokenType.Bot
+                });
+
+                _interactivity = _discord.UseInteractivity(new InteractivityConfiguration
+                {
+                    PaginationBehaviour = TimeoutBehaviour.Delete,
+                    PaginationTimeout = TimeSpan.FromSeconds(30),
+                    Timeout = TimeSpan.FromSeconds(30)
+                });
+
+                var deps = BuildDeps();
+                _commands = _discord.UseCommandsNext(new CommandsNextConfiguration
+                {
+                    StringPrefix = _config["discord:CommandPrefix"],
+                    Dependencies = deps
+                });
+
+                Log.Information("Loading command modules.");
+                var type = typeof(IModule);
+                var types =
+                    AppDomain.CurrentDomain.GetAssemblies()
+                    .SelectMany(s => s.GetTypes())
+                    .Where(p => type.IsAssignableFrom(p) && !p.IsInterface);
+
+                var typeList = types as Type[] ?? types.ToArray();
+                foreach (var t in typeList)
+                {
+                    _commands.RegisterCommands(t);
+                    Log.Information($"Adding {t} module.");
+                }
+
+                Log.Information($"Loaded {typeList.Length} modules.");
+
+                RunAsync().Wait();
+            }
+            catch (Exception e)
+            {
+                Log.Error(e.Message, e);
+            }
         }
 
-        private static async Task MainAsync(string[] args)
+        private async Task RunAsync()
         {
-            var discord = new DiscordClient(new DiscordConfiguration
-            {
-                Token = "<token>",
-                TokenType = TokenType.Bot
-            });
+            Log.Information("Connecting...");
+            await _discord.ConnectAsync();
+            Log.Information("Connected.");
             
-            var team1 = new List<DiscordMember>();
-            var team2 = new List<DiscordMember>();
-            DiscordChannel originChannel = default;
+            while (!Cts.IsCancellationRequested)
+                await Task.Delay(TimeSpan.FromMinutes(1));
+        }
+        
+        private DependencyCollection BuildDeps()
+        {
+            Log.Information("Building dependencies.");
+            using var deps = new DependencyCollectionBuilder();
 
-            discord.Ready += async eventArgs =>
-            {
-            };
+            deps.AddInstance(_interactivity)
+                .AddInstance(Cts)
+                .AddInstance(_config)
+                .AddInstance(_discord);
 
-            discord.MessageCreated += async message =>
-            {
-                if (((DiscordMember) message.Author).Roles.FirstOrDefault(x => x.Name == "Ducks") == null)
-                {
-                    return;
-                }
-                
-                if (message.Message.Content.Equals("!teams"))
-                {
-                    Log.Information("Creating teams...");
-                    
-                    originChannel = ((DiscordMember) message.Author).VoiceState.Channel;
-                    var channel = originChannel;
-                    var connectedMembers = discord.Guilds.FirstOrDefault().Value.Members
-                        .Where(member => member.VoiceState?.Channel == channel)
-                        .OrderBy(a => Guid.NewGuid())
-                        .Distinct()
-                        .ToList();
-
-                    team1 = connectedMembers.Take(connectedMembers.Count / 2).ToList();
-                    team2 = connectedMembers.Skip(connectedMembers.Count / 2).ToList();
-
-                    var embed = new DiscordEmbedBuilder
-                    {
-                        Title = "Simple Team Generator",
-                        Timestamp = DateTimeOffset.Now,
-                        Color = new DiscordColor(0xFF6133)
-                    };
-
-                    if (team1.Any())
-                    {
-                        embed.AddField($"Team {DiscordEmoji.FromName(discord, ":point_up:")}",
-                            string.Join('\n', team1.Select(x => $"- {x.DisplayName}")));
-                    }
-                    
-                    if (team2.Any())
-                    {
-                        embed.AddField($"Team {DiscordEmoji.FromName(discord, ":v:")}",
-                            string.Join('\n', team2.Select(x => $"- {x.DisplayName}")));
-                    }
-
-                    embed.Footer = new DiscordEmbedBuilder.EmbedFooter
-                    {
-                        Text = $"Good Luck & Have Fun! {DiscordEmoji.FromName(discord, ":wink:")}"
-                    };
-
-                    embed.Fields.ToList().ForEach(x => Log.Information($"\n{x.Name}\n{x.Value}"));
-                    await message.Channel.SendMessageAsync(embed: embed);
-                }
-
-                if (message.Message.Content.Equals("!split"))
-                {
-                    Log.Information("Splitting teams...");
-                    
-                    var team1Channel = discord.Guilds.FirstOrDefault().Value.Channels
-                        .FirstOrDefault(channel => channel.Id == 399703488008945664);
-                    
-                    var team2Channel = discord.Guilds.FirstOrDefault().Value.Channels
-                        .FirstOrDefault(channel => channel.Id == 399703457721745418);
-                    
-                    foreach (var member in team1)
-                    {
-                        try
-                        {
-                            await team1Channel!.PlaceMemberAsync(member);
-                            Log.Information($"Moved {member.DisplayName} to {team1Channel!.Name}");
-                        }
-                        catch (Exception e)
-                        {
-                            Log.Error(e, e.Message);
-                        }
-                    }
-                    
-                    foreach (var member in team2)
-                    {
-                        try
-                        {
-                            await team2Channel!.PlaceMemberAsync(member);
-                            Log.Information($"Moved {member.DisplayName} to {team2Channel!.Name}");
-                        }
-                        catch (Exception e)
-                        {
-                            Log.Error(e, e.Message);
-                        }
-                    }
-                }
-
-                if (message.Message.Content.Equals("!end"))
-                {
-                    Log.Information("Ending...");
-                    
-                    var teams = team1.Concat(team2).ToList();
-                    
-                    team1 = default;
-                    team2 = default;
-
-                    if (teams.Any())
-                    {
-                        foreach (var member in teams)
-                        {
-                            try
-                            {
-                                if (originChannel == default)
-                                {
-                                    await discord.Guilds.FirstOrDefault().Value.Channels
-                                        .FirstOrDefault(x => x.Id == 413533229728006145)!.PlaceMemberAsync(member);
-                                    Log.Information($"Moved {member.DisplayName} to {originChannel!.Name}");
-                                }
-                                else
-                                {
-                                    await originChannel!.PlaceMemberAsync(member);
-                                    Log.Information($"Moved {member.DisplayName} to {originChannel!.Name}");
-                                }
-                            }
-                            catch (Exception e)
-                            {
-                                Log.Error(e, e.Message);
-                            }
-                        }
-                    }
-
-                    originChannel = default;
-                }
-                
-                if (message.Message.Content.Equals("!map"))
-                {
-                    Log.Information("Choosing a map...");
-                    
-                    var embed = new DiscordEmbedBuilder
-                    {
-                        Title = "Simple Team Generator",
-                        Timestamp = DateTimeOffset.Now,
-                        Color = new DiscordColor(0xFF6133)
-                    };
-
-                    string[] maps = {"Inferno", "Train", "Mirage", "Nuke", "Overpass", "DustII", "Vertigo", "Cache"};
-
-                    var rnd = new Random();
-
-                    var map = maps[rnd.Next(0,maps.Length)];    
-                    
-                    embed.AddField($"Map {DiscordEmoji.FromName(discord, ":arrow_down:")}\n", map);
-
-                    embed.Footer = new DiscordEmbedBuilder.EmbedFooter
-                    {
-                        Text = $"{map}, what a good choice! {DiscordEmoji.FromName(discord, ":muscle:")}"
-                    };
-
-                    embed.Fields.ToList().ForEach(x => Log.Information($"\n{x.Name}\n{x.Value}"));
-                    await message.Channel.SendMessageAsync(embed: embed);
-                }
-            };
-
-            await discord.ConnectAsync();
-            await Task.Delay(-1);
+            return deps.Build();
         }
     }
 }
