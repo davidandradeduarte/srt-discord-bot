@@ -38,6 +38,11 @@ namespace SimpleRandomTeams
 
             discord.MessageCreated += async message =>
             {
+                if (((DiscordMember) message.Author).Roles.FirstOrDefault(x => x.Name == "Ducks") == null)
+                {
+                    return;
+                }
+                
                 if (message.Message.Content.Equals("!teams"))
                 {
                     Log.Information("Creating teams...");
@@ -154,11 +159,11 @@ namespace SimpleRandomTeams
 
                     originChannel = default;
                 }
+                
                 if (message.Message.Content.Equals("!map"))
                 {
                     Log.Information("Choosing a map...");
                     
-
                     var embed = new DiscordEmbedBuilder
                     {
                         Title = "Simple Team Generator",
@@ -166,17 +171,17 @@ namespace SimpleRandomTeams
                         Color = new DiscordColor(0xFF6133)
                     };
 
-                    string[] maps = {"Inferno","Train","Mirage","Nuke","Overpass","DustII","Vertigo","Cache"};
+                    string[] maps = {"Inferno", "Train", "Mirage", "Nuke", "Overpass", "DustII", "Vertigo", "Cache"};
 
-                    Random rnd = new Random();
+                    var rnd = new Random();
 
-                    string map = maps[rnd.Next(0,maps.Length)];    
+                    var map = maps[rnd.Next(0,maps.Length)];    
                     
-                    embed.AddField($"Map {DiscordEmoji.FromName(discord, ":arrow_down:")}\n" + map);
+                    embed.AddField($"Map {DiscordEmoji.FromName(discord, ":arrow_down:")}\n", map);
 
                     embed.Footer = new DiscordEmbedBuilder.EmbedFooter
                     {
-                        Text = $""+map+", what a good choice! {DiscordEmoji.FromName(discord, ":muscle:")}"
+                        Text = $"{map}, what a good choice! {DiscordEmoji.FromName(discord, ":muscle:")}"
                     };
 
                     embed.Fields.ToList().ForEach(x => Log.Information($"\n{x.Name}\n{x.Value}"));
