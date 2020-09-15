@@ -85,7 +85,7 @@ namespace SimpleRandomTeams.Commands
 
                 embed.Footer = new DiscordEmbedBuilder.EmbedFooter
                 {
-                    Text = $"Start banning maps with `!ban` <map-name> {DiscordEmoji.FromName(ctx.Client, ":no_entry:")}"
+                    Text = $"Start banning maps with `!ban <map-name>` {DiscordEmoji.FromName(ctx.Client, ":no_entry:")}"
                 };
 
                 db.VetoPlayerTeam1 = player1;

@@ -40,7 +40,7 @@ namespace SimpleRandomTeams.Commands
 
                 if (string.IsNullOrEmpty(map))
                 {
-                    await ctx.RespondAsync($"{ctx.Member.Mention} please type the map name after the !ban command.");
+                    await ctx.RespondAsync($"{ctx.Member.Mention} please type the map name after the `!ban` command.");
                     
                     var embedDefaultMaps = new DiscordEmbedBuilder
                     {
