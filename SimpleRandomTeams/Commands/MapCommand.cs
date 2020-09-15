@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using DSharpPlus.CommandsNext;
@@ -40,12 +41,12 @@ namespace SimpleRandomTeams.Commands
                     Timestamp = DateTimeOffset.Now,
                     Color = new DiscordColor(0xFF6133)
                 };
-
-                string[] maps = {"Inferno", "Train", "Mirage", "Nuke", "Overpass", "DustII", "Vertigo", "Cache"};
+                
+                var db = InMemoryDatabase.Instance;
 
                 var random = new Random();
 
-                var map = maps[random.Next(0,maps.Length)];    
+                var map = db.DefaultMaps[random.Next(0, db.DefaultMaps.Count)];
                     
                 embed.AddField($"Map {DiscordEmoji.FromName(ctx.Client, ":arrow_down:")}\n", map);
 
@@ -59,7 +60,7 @@ namespace SimpleRandomTeams.Commands
             }
             catch (Exception e)
             {
-                Log.Error(e.Message, e);
+                Log.Error(e.StackTrace ?? string.Empty, e.Message, e);
             }
         }
     }

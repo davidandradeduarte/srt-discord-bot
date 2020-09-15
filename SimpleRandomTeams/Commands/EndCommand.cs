@@ -59,7 +59,7 @@ namespace SimpleRandomTeams.Commands
                         }
                         catch (Exception e)
                         {
-                            Log.Error(e, e.Message);
+                            Log.Error(e.StackTrace ?? string.Empty, e.Message, e);
                         }
                     }
                 }
@@ -68,7 +68,7 @@ namespace SimpleRandomTeams.Commands
             }
             catch (Exception e)
             {
-                Log.Error(e.Message, e);
+                Log.Error(e.StackTrace ?? string.Empty, e.Message, e);
             }
         }
     }

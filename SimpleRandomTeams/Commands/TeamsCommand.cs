@@ -62,13 +62,13 @@ namespace SimpleRandomTeams.Commands
                 if (db.Team1.Any())
                 {
                     embed.AddField($"Team {DiscordEmoji.FromName(ctx.Client, ":point_up:")}",
-                        string.Join('\n', db.Team1.Select(x => $"- {x.DisplayName}")));
+                        string.Join('\n', db.Team1.Select(x => $"- {x.Mention}")));
                 }
 
                 if (db.Team1.Any())
                 {
                     embed.AddField($"Team {DiscordEmoji.FromName(ctx.Client, ":v:")}",
-                        string.Join('\n', db.Team2.Select(x => $"- {x.DisplayName}")));
+                        string.Join('\n', db.Team2.Select(x => $"- {x.Mention}")));
                 }
 
                 embed.Footer = new DiscordEmbedBuilder.EmbedFooter
@@ -81,7 +81,7 @@ namespace SimpleRandomTeams.Commands
             }
             catch (Exception e)
             {
-                Log.Error(e.StackTrace, e);
+                Log.Error(e.StackTrace ?? string.Empty, e.Message, e);
             }
         }
     }

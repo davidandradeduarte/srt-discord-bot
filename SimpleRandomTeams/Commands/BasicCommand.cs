@@ -13,5 +13,13 @@ namespace SimpleRandomTeams.Commands
             await ctx.TriggerTypingAsync();
             await ctx.RespondAsync("yo.");
         }
+        
+        [Command("reset")]
+        [Description("Reset in memory database.")]
+        public async Task Reset(CommandContext ctx)
+        {
+            InMemoryDatabase.Reset(); 
+            await ctx.RespondAsync("Everything good.");
+        }
     }
 }

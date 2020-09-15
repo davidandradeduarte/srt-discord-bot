@@ -34,7 +34,7 @@ namespace SimpleRandomTeams
             catch (Exception e)
             {
                 Console.WriteLine("Error when creating the logger.");
-                Console.WriteLine(e.Message, e);
+                Console.WriteLine(e.StackTrace ?? string.Empty, e.Message, e);
                 throw;
             }
             
@@ -89,7 +89,7 @@ namespace SimpleRandomTeams
             }
             catch (Exception e)
             {
-                Log.Error(e.Message, e);
+                Log.Error(e.StackTrace ?? string.Empty, e.Message, e);
             }
         }
 

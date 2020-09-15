@@ -32,7 +32,14 @@ namespace SimpleRandomTeams.Commands
                 }
                 
                 var db = InMemoryDatabase.Instance;
-            
+                
+                if (!db.Team1.Any() || !db.Team2.Any())
+                {
+                    Log.Warning("There are no defined teams.");
+                    await ctx.RespondAsync("There are no defined teams. Type `!teams` to generate random teams first.");
+                    return;
+                }
+
                 // TODO: remove team1/team2 hardcoded voice channel ids
                 var team1Channel = ctx.Guild.Channels
                     .FirstOrDefault(channel => channel.Id == 399703488008945664);
@@ -49,7 +56,7 @@ namespace SimpleRandomTeams.Commands
                     }
                     catch (Exception e)
                     {
-                        Log.Error(e, e.Message);
+                        Log.Error(e.StackTrace ?? string.Empty, e.Message, e);
                     }
                 }
 
@@ -62,13 +69,13 @@ namespace SimpleRandomTeams.Commands
                     }
                     catch (Exception e)
                     {
-                        Log.Error(e, e.Message);
+                        Log.Error(e.StackTrace ?? string.Empty, e.Message, e);
                     }
                 }
             }
             catch (Exception e)
             {
-                Log.Error(e.Message, e);
+                Log.Error(e.StackTrace ?? string.Empty, e.Message, e);
             }
         }
     }
