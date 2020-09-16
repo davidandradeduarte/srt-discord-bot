@@ -78,7 +78,7 @@ namespace SimpleRandomTeams.Commands
 
                 embed.AddField($"Leader for team {DiscordEmoji.FromName(ctx.Client, ":v:")}", player2.Mention);
                 
-                embed.AddField("", $"{player.Mention} to choose first!");
+                embed.AddField("First player to ban a map is:", $"{player.Mention}");
                 
                 embed.AddField($"Available maps {DiscordEmoji.FromName(ctx.Client, ":map:")}",
                     string.Join('\n', db.DefaultMaps.Select(x => $"- {CultureInfo.CurrentCulture.TextInfo.ToTitleCase(x)}")));

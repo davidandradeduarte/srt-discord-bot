@@ -76,7 +76,10 @@ namespace SimpleRandomTeams.Commands
                     Text = $"Good Luck & Have Fun! {DiscordEmoji.FromName(ctx.Client, ":wink:")}"
                 };
 
-                embed.Fields.ToList().ForEach(x => Log.Information($"\n{x.Name}\n{x.Value}"));
+                Log.Information("Team1:");
+                db.Team1.ForEach(x => Log.Information($"{x.DisplayName}"));
+                Log.Information("Team2:");
+                db.Team2.ForEach(x => Log.Information($"{x.DisplayName}"));
                 await ctx.RespondAsync(embed: embed);
             }
             catch (Exception e)
