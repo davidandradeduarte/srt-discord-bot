@@ -1,4 +1,5 @@
-﻿# Simple Random Teams
+﻿TODO: this needs updates
+# Simple Random Teams
 
 Simple Random Teams is a Discord Bot written in C#, running on .NET Core 3.1 as a Console app.  
 This bot does some very simplistic work, but very helpful for communities that do random scrims every day.  
