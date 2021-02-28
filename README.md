@@ -1,5 +1,7 @@
 ﻿# Simple Random Teams
 
+![Pipeline](https://github.com/davidandradeduarte/simple-random-teams/actions/workflows/pipeline.yml/badge.svg)
+
 Simple Random Teams is a Discord bot very useful for communities that do random csgo scrims every day.
 
 ## Running it
