@@ -6,10 +6,12 @@ using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
 using Serilog;
+using SimpleRandomTeams.Commands.Interfaces;
+using SimpleRandomTeams.Services;
 
 namespace SimpleRandomTeams.Commands
 {
-    public class VetoCommand : IModule
+    public class VetoCommand : BaseCommandModule, IModule
     {
         [Command("veto")]
         [Description("Picks one random member from each team to start a veto process.")]
@@ -17,12 +19,11 @@ namespace SimpleRandomTeams.Commands
         {
             try
             {
-                // TODO: move to a custom "auth" attribute
-                if (ctx.Member.Roles.FirstOrDefault(x => x.Name == "Ducks") == null)
-                {
-                    Log.Warning($"User {ctx.Member.DisplayName} has no access to execute this command.");
-                    return;
-                }
+                // if (ctx.Member.Roles.FirstOrDefault(x => x.Name == "Ducks") == null)
+                // {
+                //     LoggingService.LogWarning($"User {ctx.Member.DisplayName} has no access to execute this command.");
+                //     return;
+                // }
 
                 if (args.Any())
                 {
@@ -30,13 +31,13 @@ namespace SimpleRandomTeams.Commands
                     return;
                 }
             
-                Log.Information("Picking one random member from each team to start a veto process.");
+                LoggerService.LogInformation(ctx.Client, "Picking one random member from each team to start a veto process.");
             
                 await ctx.TriggerTypingAsync();
 
                 if (ctx.Member.VoiceState == null)
                 {
-                    Log.Warning($"User {ctx.Member.DisplayName} is not connected to a voice channel.");
+                    LoggerService.LogWarning(ctx.Client, $"User {ctx.Member.DisplayName} is not connected to a voice channel.");
                     await ctx.RespondAsync($"{ctx.Member.Mention} you need to be connected to a voice channel.");
                     return;
                 }
@@ -45,7 +46,7 @@ namespace SimpleRandomTeams.Commands
 
                 if (!db.Team1.Any() || !db.Team2.Any())
                 {
-                    Log.Warning("There aren't enough players to start a veto process.");
+                    LoggerService.LogWarning(ctx.Client, "There aren't enough players to start a veto process.");
                     await ctx.RespondAsync("There aren't enough players to start a veto process.");
                     return;
                 }
@@ -96,7 +97,7 @@ namespace SimpleRandomTeams.Commands
             }
             catch (Exception e)
             {
-                Log.Error(e.StackTrace ?? string.Empty, e.Message, e);
+                LoggerService.LogError(ctx.Client, e, e.Message);
             }
         }
     }

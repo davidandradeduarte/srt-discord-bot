@@ -1,109 +1,127 @@
 using System;
 using System.IO;
 using System.Linq;
-using System.Threading;
+using System.Text.Json;
 using System.Threading.Tasks;
 using DSharpPlus;
 using DSharpPlus.CommandsNext;
+using DSharpPlus.CommandsNext.Exceptions;
 using DSharpPlus.Entities;
-using DSharpPlus.Interactivity;
-using Microsoft.Extensions.Configuration;
-using Serilog;
-using SimpleRandomTeams.Commands;
+using DSharpPlus.EventArgs;
+using Microsoft.Extensions.Logging;
+using SimpleRandomTeams.Commands.Interfaces;
+using SimpleRandomTeams.Configuration;
 
 namespace SimpleRandomTeams.Services
 {
     public class BotService
     {
-        private CancellationTokenSource Cts { get; set; }
-        private IConfigurationRoot _config;
-        private DiscordClient _discord;
-        private CommandsNextModule _commands;
-        private InteractivityModule _interactivity;
-        
+        public readonly EventId BotEventId = new(42, "SRT");
+        public DiscordClient Client { get; set; }
+        public CommandsNextExtension Commands { get; set; }
+
+        public ConfigurationSettings Configuration { get; set; }
+
         public async Task InitAsync()
         {
-            try
+            // Configuration
+            await using var stream = File.OpenRead("config.json");
+            Configuration = await JsonSerializer.DeserializeAsync<ConfigurationSettings>(stream);
+            
+            var cfg = new DiscordConfiguration
             {
-                Cts = new CancellationTokenSource();
+                Token = Configuration.Token,
+                TokenType = TokenType.Bot,
+                AutoReconnect = true,
+                MinimumLogLevel = LogLevel.Debug
+            };
 
-                Log.Information("Loading configuration file");
-                _config = new ConfigurationBuilder()
-                    .SetBasePath(Directory.GetCurrentDirectory())
-                    .AddJsonFile("config.json", optional: false, reloadOnChange: true)
-                    .Build();
+            Client = new DiscordClient(cfg);
 
-                Log.Information("Creating discord client");
-                _discord = new DiscordClient(new DiscordConfiguration
-                {
-                    AutoReconnect = true,
-                    LargeThreshold = 250,
-                    MessageCacheSize = 2048,
-                    Token = _config["discord:token"],
-                    TokenType = TokenType.Bot
-                });
+            // Events
+            Client.Ready += Client_Ready;
+            Client.GuildAvailable += Client_GuildAvailable;
+            Client.ClientErrored += Client_ClientError;
 
-                _interactivity = _discord.UseInteractivity(new InteractivityConfiguration
-                {
-                    PaginationBehaviour = TimeoutBehaviour.Delete,
-                    PaginationTimeout = TimeSpan.FromSeconds(30),
-                    Timeout = TimeSpan.FromSeconds(30)
-                });
-
-                var deps = BuildDeps();
-                _commands = _discord.UseCommandsNext(new CommandsNextConfiguration
-                {
-                    StringPrefix = _config["discord:CommandPrefix"],
-                    Dependencies = deps
-                });
-
-                Log.Information("Loading command modules");
-                var type = typeof(IModule);
-                var types =
-                    AppDomain.CurrentDomain.GetAssemblies()
-                        .SelectMany(s => s.GetTypes())
-                        .Where(p => type.IsAssignableFrom(p) && !p.IsInterface);
-
-                var typeList = types as Type[] ?? types.ToArray();
-                foreach (var t in typeList)
-                {
-                    _commands.RegisterCommands(t);
-                    Log.Information($"Adding {t.Name} module.");
-                }
-
-                Log.Information($"Loaded {typeList.Length} modules.");
-
-                RunAsync().Wait();
-            }
-            catch (Exception e)
+            // Commands
+            var nextConfiguration = new CommandsNextConfiguration
             {
-                Log.Error(e, e.Message);
+                StringPrefixes = new[] {Configuration.CommandPrefix},
+                EnableDms = false,
+                EnableMentionPrefix = true
+            };
+            
+            Commands = Client.UseCommandsNext(nextConfiguration);
+
+            Commands.CommandExecuted += Commands_CommandExecuted;
+            Commands.CommandErrored += Commands_CommandErrored;
+
+            var type = typeof(IModule);
+            var types =
+                AppDomain.CurrentDomain.GetAssemblies()
+                    .SelectMany(s => s.GetTypes())
+                    .Where(p => type.IsAssignableFrom(p) && !p.IsInterface);
+
+            var typeList = types as Type[] ?? types.ToArray();
+            foreach (var t in typeList)
+            {
+                Commands.RegisterCommands(t);
             }
+
+            // Connect
+            await Client.ConnectAsync();
+
+            await Task.Delay(-1);
         }
-        
-        private DependencyCollection BuildDeps()
+
+        private async Task Client_Ready(DiscordClient sender, ReadyEventArgs e)
         {
-            Log.Information("Building dependencies");
-            using var deps = new DependencyCollectionBuilder();
+            LoggerService.LogInformation(sender, BotEventId, "Client is ready to process events");
 
-            deps.AddInstance(_interactivity)
-                .AddInstance(Cts)
-                .AddInstance(_config)
-                .AddInstance(_discord);
-
-            return deps.Build();
+            await sender.UpdateStatusAsync(new DiscordActivity
+                {ActivityType = ActivityType.ListeningTo, Name = Configuration.CommandPrefix});
         }
-        
-        private async Task RunAsync()
+
+        private Task Client_GuildAvailable(DiscordClient sender, GuildCreateEventArgs e)
         {
-            Log.Information("Connecting...");
-            await _discord.ConnectAsync();
-            Log.Information("Connected");
+            LoggerService.LogInformation(sender, BotEventId, $"Guild available: {e.Guild.Name}");
+            
+            return Task.CompletedTask;
+        }
 
-            await _discord.UpdateStatusAsync(new DiscordGame{Name = "teste"});
+        private Task Client_ClientError(DiscordClient sender, ClientErrorEventArgs e)
+        {
+            LoggerService.LogError(sender, BotEventId, e.Exception, "Exception occured");
+            
+            return Task.CompletedTask;
+        }
 
-            while (!Cts.IsCancellationRequested)
-                await Task.Delay(TimeSpan.FromMinutes(1));
+        private Task Commands_CommandExecuted(CommandsNextExtension sender, CommandExecutionEventArgs e)
+        {
+            LoggerService.LogInformation(e.Context.Client, BotEventId,
+                $"{e.Context.User.Username} successfully executed '{e.Command.QualifiedName}'");
+
+            return Task.CompletedTask;
+        }
+
+        private async Task Commands_CommandErrored(CommandsNextExtension sender, CommandErrorEventArgs e)
+        {
+            LoggerService.LogError(e.Context.Client, BotEventId,
+                $"{e.Context.User.Username} tried executing '{e.Command?.QualifiedName ?? "<unknown command>"}' but it errored: {e.Exception.GetType()}: {e.Exception.Message}",
+                DateTime.Now);
+
+            if (e.Exception is ChecksFailedException)
+            {
+                var emoji = DiscordEmoji.FromName(e.Context.Client, ":no_entry:");
+
+                var embed = new DiscordEmbedBuilder
+                {
+                    Title = "Access denied",
+                    Description = $"{emoji} You do not have the permissions required to execute this command.",
+                    Color = new DiscordColor(0xFF0000) // red
+                };
+                await e.Context.RespondAsync(embed);
+            }
         }
     }
 }

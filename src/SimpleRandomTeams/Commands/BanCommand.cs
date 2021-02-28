@@ -5,11 +5,12 @@ using System.Threading.Tasks;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
-using Serilog;
+using SimpleRandomTeams.Commands.Interfaces;
+using SimpleRandomTeams.Services;
 
 namespace SimpleRandomTeams.Commands
 {
-    public class BanCommand : IModule
+    public class BanCommand : BaseCommandModule, IModule
     {
         [Command("ban")]
         [Description("Bans a map from the veto available maps.")]
@@ -23,17 +24,17 @@ namespace SimpleRandomTeams.Commands
                 
                 if (!new List<DiscordMember>{db.VetoPlayerTeam1, db.VetoPlayerTeam2}.Contains(ctx.Member))
                 {
-                    Log.Warning($"User {ctx.Member.DisplayName} has no access to execute this command.");
+                    LoggerService.LogWarning(ctx.Client, $"User {ctx.Member.DisplayName} has no access to execute this command.");
                     return;
                 }
             
-                Log.Information($"{ctx.Member.DisplayName} voting to ban {map}.");
+                LoggerService.LogInformation(ctx.Client, $"{ctx.Member.DisplayName} voting to ban {map}.");
             
                 await ctx.TriggerTypingAsync();
 
                 if (ctx.Member.VoiceState == null)
                 {
-                    Log.Warning($"User {ctx.Member.DisplayName} is not connected to a voice channel.");
+                    LoggerService.LogWarning(ctx.Client, $"User {ctx.Member.DisplayName} is not connected to a voice channel.");
                     await ctx.RespondAsync($"{ctx.Member.Mention} you need to be connected to a voice channel.");
                     return;
                 }
@@ -104,7 +105,7 @@ namespace SimpleRandomTeams.Commands
                     embedVetoMap.AddField($"We have a map {DiscordEmoji.FromName(ctx.Client, ":white_check_mark:")}",
                         string.Join('\n', db.VetoMaps.Select(x => $"- {x}")));
 
-                    embedVetoMap.Fields.ToList().ForEach(x => Log.Information($"\n{x.Name}\n{x.Value}"));
+                    embedVetoMap.Fields.ToList().ForEach(x => LoggerService.LogInformation(ctx.Client, $"\n{x.Name}\n{x.Value}"));
                     await ctx.RespondAsync(embed: embedVetoMap);
 
                     db.VetoPlayerTeam1 = default;
@@ -124,12 +125,12 @@ namespace SimpleRandomTeams.Commands
                 embed.AddField($"Veto maps {DiscordEmoji.FromName(ctx.Client, ":map:")}",
                     string.Join('\n', db.VetoMaps.Select(x => $"- {x}")));
 
-                embed.Fields.ToList().ForEach(x => Log.Information($"\n{x.Name}\n{x.Value}"));
+                embed.Fields.ToList().ForEach(x => LoggerService.LogInformation(ctx.Client, $"\n{x.Name}\n{x.Value}"));
                 await ctx.RespondAsync(embed: embed);
             }
             catch (Exception e)
             {
-                Log.Error(e.StackTrace ?? string.Empty, e.Message, e);
+                LoggerService.LogError(ctx.Client, e, e.Message);
             }
         }
     }

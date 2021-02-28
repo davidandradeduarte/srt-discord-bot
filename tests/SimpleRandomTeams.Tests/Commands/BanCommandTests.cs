@@ -1,13 +1,12 @@
 using Xunit;
 
-namespace SimpleRandomTeams.Tests
+namespace SimpleRandomTeams.Tests.Commands
 {
-    public class UnitTest1
+    public class BanCommandTests
     {
         [Fact]
         public void Test1()
         {
-
         }
     }
 }

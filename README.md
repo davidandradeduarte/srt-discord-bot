@@ -41,3 +41,8 @@ dotnet run
 Pull requests are welcome.
 
 ## License
+
+
+## Improvements
+
+- Find a way to log to file using DSharpPlus logger factory

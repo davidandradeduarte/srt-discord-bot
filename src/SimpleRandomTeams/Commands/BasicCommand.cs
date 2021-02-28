@@ -3,17 +3,16 @@ using System.Threading.Tasks;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
-using Serilog;
+using SimpleRandomTeams.Commands.Interfaces;
 
 namespace SimpleRandomTeams.Commands
 {
-    public class BasicCommands : IModule
+    public class BasicCommands : BaseCommandModule, IModule
     {
         [Command("yo")]
         [Description("Test if the bot is running.")]
         public async Task Alive(CommandContext ctx)
         {
-            await ctx.Client.UpdateStatusAsync(new DiscordGame{Name = "teste"});
             await ctx.TriggerTypingAsync();
             await ctx.RespondAsync("yo.");
         }

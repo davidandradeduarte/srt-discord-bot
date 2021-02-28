@@ -3,11 +3,11 @@ using SimpleRandomTeams.Services;
 
 namespace SimpleRandomTeams
 {
-    internal static class Program
+    public static class Program
     {
-        private static async Task Main()
+        public static async Task Main(string[] args)
         {
-            LoggingService.AddLogging();
+            LoggerService.AddLogging();
             await new BotService().InitAsync();
         }
     }
