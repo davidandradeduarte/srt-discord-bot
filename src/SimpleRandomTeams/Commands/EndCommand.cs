@@ -3,11 +3,12 @@ using System.Linq;
 using System.Threading.Tasks;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
-using Serilog;
+using SimpleRandomTeams.Commands.Interfaces;
+using SimpleRandomTeams.Services;
 
 namespace SimpleRandomTeams.Commands
 {
-    public class EndCommand : IModule
+    public class EndCommand : BaseCommandModule, IModule
     {
         [Command("end")]
         [Description("Move team members to the original voice channel.")]
@@ -15,18 +16,17 @@ namespace SimpleRandomTeams.Commands
         {
             try
             {
-                // TODO: move to a custom "auth" attribute
-                if (ctx.Member.Roles.FirstOrDefault(x => x.Name == "Ducks") == null)
-                {
-                    Log.Warning($"User {ctx.Member.DisplayName} has no access to execute this command.");
-                    return;
-                }
+                // if (ctx.Member.Roles.FirstOrDefault(x => x.Name == "Ducks") == null)
+                // {
+                //     LoggingService.LogWarning(ctx.Client, $"User {ctx.Member.DisplayName} has no access to execute this command.");
+                //     return;
+                // }
             
-                Log.Information("Moving team members to the original voice channel.");
+                LoggerService.LogInformation(ctx.Client, "Moving team members to the original voice channel.");
             
                 if (ctx.Member.VoiceState == null)
                 {
-                    Log.Warning($"User {ctx.Member.DisplayName} is not connected to a voice channel.");
+                    LoggerService.LogWarning(ctx.Client, $"User {ctx.Member.DisplayName} is not connected to a voice channel.");
                     await ctx.RespondAsync($"@{ctx.Member.Mention} you need to be connected to a voice channel.");
                     return;
                 }
@@ -48,18 +48,18 @@ namespace SimpleRandomTeams.Commands
                             {
                                 // TODO: remove hardcoded channel id and set it to default guild voice channel
                                 await ctx.Guild.Channels
-                                    .FirstOrDefault(x => x.Id == 413533229728006145)!.PlaceMemberAsync(member);
-                                Log.Information($"Moved {member.DisplayName} to {db.OriginChannel?.Name}");
+                                    .FirstOrDefault(x => x.Value.Id == 413533229728006145)!.Value.PlaceMemberAsync(member);
+                                LoggerService.LogInformation(ctx.Client, $"Moved {member.DisplayName} to {db.OriginChannel?.Name}");
                             }
                             else
                             {
                                 await db.OriginChannel.PlaceMemberAsync(member);
-                                Log.Information($"Moved {member.DisplayName} to {db.OriginChannel?.Name}");
+                                LoggerService.LogInformation(ctx.Client, $"Moved {member.DisplayName} to {db.OriginChannel?.Name}");
                             }
                         }
                         catch (Exception e)
                         {
-                            Log.Error(e.StackTrace ?? string.Empty, e.Message, e);
+                            LoggerService.LogError(ctx.Client, e, e.Message);
                         }
                     }
                 }
@@ -68,7 +68,7 @@ namespace SimpleRandomTeams.Commands
             }
             catch (Exception e)
             {
-                Log.Error(e.StackTrace ?? string.Empty, e.Message, e);
+                LoggerService.LogError(ctx.Client, e, e.Message);
             }
         }
     }

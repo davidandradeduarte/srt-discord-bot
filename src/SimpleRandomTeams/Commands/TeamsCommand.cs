@@ -5,10 +5,12 @@ using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
 using Serilog;
+using SimpleRandomTeams.Commands.Interfaces;
+using SimpleRandomTeams.Services;
 
 namespace SimpleRandomTeams.Commands
 {
-    public class TeamsCommand : IModule
+    public class TeamsCommand : BaseCommandModule, IModule
     {
         [Command("teams")]
         [Description("Generate random teams with members in the current voice channel.")]
@@ -16,20 +18,19 @@ namespace SimpleRandomTeams.Commands
         {
             try
             {
-                // TODO: move to a custom "auth" attribute
-                if (ctx.Member.Roles.FirstOrDefault(x => x.Name == "Ducks") == null)
-                {
-                    Log.Warning($"User {ctx.Member.DisplayName} has no access to execute this command.");
-                    return;
-                }
+                // if (ctx.Member.Roles.FirstOrDefault(x => x.Name == "Ducks") == null)
+                // {
+                //     LoggingService.LogWarning($"User {ctx.Member.DisplayName} has no access to execute this command.");
+                //     return;
+                // }
             
-                Log.Information("Generating random teams with members in the current voice channel.");
+                LoggerService.LogInformation(ctx.Client, "Generating random teams with members in the current voice channel.");
             
                 await ctx.TriggerTypingAsync();
 
                 if (ctx.Member.VoiceState == null)
                 {
-                    Log.Warning($"User {ctx.Member.DisplayName} is not connected to a voice channel.");
+                    LoggerService.LogWarning(ctx.Client, $"User {ctx.Member.DisplayName} is not connected to a voice channel.");
                     await ctx.RespondAsync($"{ctx.Member.Mention} you need to be connected to a voice channel.");
                     return;
                 }
@@ -38,9 +39,10 @@ namespace SimpleRandomTeams.Commands
 
                 db.OriginChannel = ctx.Member.VoiceState.Channel;
                 var connectedMembers = ctx.Guild.Members
-                    .Where(member => member.VoiceState?.Channel == db.OriginChannel)
+                    .Where(member => member.Value.VoiceState?.Channel == db.OriginChannel)
                     .OrderBy(a => Guid.NewGuid())
                     .Distinct()
+                    .Select(x => x.Value)
                     .ToList();
 
                 if (connectedMembers.Count < 2)
@@ -76,15 +78,15 @@ namespace SimpleRandomTeams.Commands
                     Text = $"Good Luck & Have Fun! {DiscordEmoji.FromName(ctx.Client, ":wink:")}"
                 };
 
-                Log.Information("Team1:");
-                db.Team1.ForEach(x => Log.Information($"{x.DisplayName}"));
-                Log.Information("Team2:");
-                db.Team2.ForEach(x => Log.Information($"{x.DisplayName}"));
+                LoggerService.LogInformation(ctx.Client, "Team1:");
+                db.Team1.ForEach(x => LoggerService.LogInformation(ctx.Client, $"{x.DisplayName}"));
+                LoggerService.LogInformation(ctx.Client, "Team2:");
+                db.Team2.ForEach(x => LoggerService.LogInformation(ctx.Client, $"{x.DisplayName}"));
                 await ctx.RespondAsync(embed: embed);
             }
             catch (Exception e)
             {
-                Log.Error(e.StackTrace ?? string.Empty, e.Message, e);
+                LoggerService.LogError(ctx.Client, e, e.Message);
             }
         }
     }

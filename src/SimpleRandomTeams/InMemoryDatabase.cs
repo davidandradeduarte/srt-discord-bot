@@ -5,13 +5,13 @@ namespace SimpleRandomTeams
 {
     public class InMemoryDatabase
     {
-        public static InMemoryDatabase Instance { get; } = new InMemoryDatabase();
+        public static InMemoryDatabase Instance { get; } = new();
 
-        public List<DiscordMember> Team1 { get; set; } = new List<DiscordMember>();
-        public List<DiscordMember> Team2 { get; set; } = new List<DiscordMember>();
+        public List<DiscordMember> Team1 { get; set; } = new();
+        public List<DiscordMember> Team2 { get; set; } = new();
         public DiscordChannel OriginChannel { get; set; }
-        public List<string> VetoMaps = default;
-        public readonly List<string> DefaultMaps = new List<string>
+        public List<string> VetoMaps;
+        public readonly List<string> DefaultMaps = new()
         {
             "inferno", "train", "mirage", "nuke", "overpass", "dust2", "vertigo", "cache"
         };

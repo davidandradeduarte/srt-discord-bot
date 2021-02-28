@@ -3,10 +3,11 @@ using System.Threading.Tasks;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
+using SimpleRandomTeams.Commands.Interfaces;
 
 namespace SimpleRandomTeams.Commands
 {
-    public class BasicCommands : IModule
+    public class BasicCommands : BaseCommandModule, IModule
     {
         [Command("yo")]
         [Description("Test if the bot is running.")]
