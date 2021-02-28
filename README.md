@@ -16,13 +16,13 @@ dotnet run
 ### Build
 
 ```bash
-docker build -t local/srt-discord-bot -f src/SimpleRandomTeams/Dockerfile .
+docker build -t local/srt-discord-bot .
 ```
 
 ### Build for arm32v7
 
 ```bash
-docker build -t local/srt-discord-bot -f src/SimpleRandomTeams/Dockerfile.arm32v7 .
+docker build -t local/srt-discord-bot -f Dockerfile.arm32v7 .
 ```
 
 ### Run
