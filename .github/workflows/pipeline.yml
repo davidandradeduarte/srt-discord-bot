@@ -1,4 +1,4 @@
-name: .NET
+name: Pipeline (restore/build/test)
 
 on:
   push:
