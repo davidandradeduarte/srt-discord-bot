@@ -1,5 +1,4 @@
-﻿TODO: this needs updates
-# Simple Random Teams
+﻿# Simple Random Teams
 
 Simple Random Teams is a Discord bot very useful for communities that do random csgo scrims every day.
 
@@ -14,17 +13,20 @@ dotnet run
 
 ## Using Docker
 
-**Build**
+### Build
+
 ```bash
 docker build -t local/srt-discord-bot -f src/SimpleRandomTeams/Dockerfile .
 ```
 
-**Build for arm32v7**
+### Build for arm32v7
+
 ```bash
 docker build -t local/srt-discord-bot -f src/SimpleRandomTeams/Dockerfile.arm32v7 .
 ```
 
-**Run**
+### Run
+
 ```bash
 docker run -d --name srt-discord local/srt-discord-bot
 ```
