@@ -1,4 +1,4 @@
-﻿# Simple Random Teams
+﻿# Simple Random Teams Discord Bot
 
 ![Pipeline](https://github.com/davidandradeduarte/simple-random-teams/actions/workflows/pipeline.yml/badge.svg)
 
