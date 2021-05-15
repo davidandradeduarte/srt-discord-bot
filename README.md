@@ -6,31 +6,26 @@ Simple Random Teams is a Discord bot very useful for communities that do random 
 
 ## Running it
 
+### With Docker _(recommended)_
+
+```bash
+make docker
+make docker-arm # for arm devices
+# or
+docker build -t srt-discord-bot .
+docker build -t srt-discord-bot -f Dockerfile.arm32v7 . # for arm devices
+docker run -d --name srt-discord srt-discord-bot
+```
+
+### Without Docker
+
 - Install [.NET 5 SDK](https://dotnet.microsoft.com/download/dotnet/5.0)
 - Set your bot token in [config.json](src/SimpleRandomTeams/config.json)
 
 ```bash
+make run
+# or
 dotnet run
-```
-
-## Using Docker
-
-### Build
-
-```bash
-docker build -t local/srt-discord-bot .
-```
-
-### Build for arm32v7
-
-```bash
-docker build -t local/srt-discord-bot -f Dockerfile.arm32v7 .
-```
-
-### Run
-
-```bash
-docker run -d --name srt-discord local/srt-discord-bot
 ```
 
 ## Available Commands
