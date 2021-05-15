@@ -6,6 +6,8 @@ Simple Random Teams is a Discord bot very useful for communities that do random 
 
 ## Running it
 
+- Set your bot token in [config.json](src/SimpleRandomTeams/config.json)
+
 ### With Docker _(recommended)_
 
 ```bash
